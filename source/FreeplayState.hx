@@ -51,7 +51,7 @@ class FreeplayState extends MusicBeatState
     var songLength:Float = 0;
 	var scoreBG:FlxSprite;
 	var scoreText:FlxText;
-	var diffText:FlxText;
+	//var diffText:FlxText;
 	var lerpScore:Int = 0;
 	var lerpRating:Float = 0;
 	var intendedScore:Int = 0;
@@ -66,7 +66,12 @@ class FreeplayState extends MusicBeatState
 	var intendedColor:Int;
 	var colorTween:FlxTween;
 	var camZoom:FlxTween;
-
+	
+	var difficultySelectors:FlxGroup;
+	var sprDifficulty:FlxSprite;
+	var leftArrow:FlxSprite;
+	var rightArrow:FlxSprite;
+	
 	override function create()
 	{
 		Paths.clearStoredMemory();
@@ -145,7 +150,6 @@ class FreeplayState extends MusicBeatState
 		{
 			var songText:Alphabet = new Alphabet(90, 320, songs[i].songName, true);
 			songText.isMenuItem = true;
-			songText.itemType = 'D-Shape';
 			songText.targetY = i - curSelected;
 			grpSongs.add(songText);
 
@@ -167,6 +171,7 @@ class FreeplayState extends MusicBeatState
 			// DONT PUT X IN THE FIRST PARAMETER OF new ALPHABET() !!
 			// songText.screenCenter(X);
 		}
+		
 		WeekData.setDirectoryFromWeek();
 		
 timeTxt = new FlxText(20, 19, 1280, "", 32);
@@ -198,30 +203,62 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		add(timeTxt);
 		timeBarBG.sprTracker = timeBar;
 		
-		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
-		scoreText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, RIGHT);
-
-		scoreBG = new FlxSprite(scoreText.x - 6, 0).makeGraphic(1, 66, 0xFF000000);
-		scoreBG.alpha = 0.6;
+        scoreText = new FlxText(50, bottomPanel.y + 18, FlxG.width, "", 28);
+		// scoreText.autoSize = false;
+		scoreText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
+		// scoreText.screenCenter(X);
+		// scoreText.alignment = RIGHT;
+		scoreText.borderSize = 2;
+		
+		scoreBG = new FlxSprite(0, 0).makeGraphic(FlxG.width, 66, 0xFF000000);
+		scoreBG.alpha = 0.8;
 		add(scoreBG);
+		
+		var bottomPanel:FlxSprite = new FlxSprite(0, FlxG.height - 100).makeGraphic(FlxG.width, 100, 0xFF000000);
+		bottomPanel.alpha = 0.8;
+		add(bottomPanel);
 
-		diffText = new FlxText(scoreText.x, scoreText.y + 36, 0, "", 24);
-		diffText.font = scoreText.font;
-		add(diffText);
+		//diffText = new FlxText(scoreText.x, scoreText.y + 36, 0, "", 24);
+		//diffText.font = scoreText.font;
+		//add(diffText);
 
 		add(scoreText);
 
 		if(curSelected >= songs.length) curSelected = 0;
 		bg.color = songs[curSelected].color;
 		intendedColor = bg.color;
+		
+		var ui_tex = Paths.getSparrowAtlas('campaign_menu_UI_assets');
 
+		leftArrow = new FlxSprite(600, 0);
+		leftArrow.frames = ui_tex;
+		leftArrow.animation.addByPrefix('idle', "arrow left");
+		leftArrow.animation.addByPrefix('press', "arrow push left");
+		leftArrow.animation.play('idle');
+		leftArrow.antialiasing = ClientPrefs.globalAntialiasing;
+		leftArrow.scale.set(0.9, 0.9);
+		difficultySelectors.add(leftArrow);
+
+		CoolUtil.difficulties = CoolUtil.defaultDifficulties.copy();
 		if(lastDifficultyName == '')
 		{
 			lastDifficultyName = CoolUtil.defaultDifficulty;
 		}
 		curDifficulty = Math.round(Math.max(0, CoolUtil.defaultDifficulties.indexOf(lastDifficultyName)));
 		
-		changeSelection();
+		sprDifficulty = new FlxSprite(leftArrow.x + 70, leftArrow.y);
+		sprDifficulty.antialiasing = ClientPrefs.globalAntialiasing;
+		difficultySelectors.add(sprDifficulty);
+
+		rightArrow = new FlxSprite(leftArrow.x + 376, leftArrow.y);
+		rightArrow.frames = ui_tex;
+		rightArrow.animation.addByPrefix('idle', 'arrow right');
+		rightArrow.animation.addByPrefix('press', "arrow push right", 24, false);
+		rightArrow.animation.play('idle');
+		rightArrow.antialiasing = ClientPrefs.globalAntialiasing;
+		rightArrow.scale.set(0.9, 0.9);
+		difficultySelectors.add(rightArrow);
+
 		changeDiff();
 		
 		camZoom = FlxTween.tween(this, {}, 0);
@@ -247,7 +284,7 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 
 		var textBG:FlxSprite = new FlxSprite(0, FlxG.height - 26).makeGraphic(FlxG.width, 26, 0xFF000000);
 		textBG.alpha = 0.6;
-		add(textBG);
+		//add(textBG);
 
 		#if PRELOAD_ALL
 		#if android
@@ -264,16 +301,17 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		var text:FlxText = new FlxText(textBG.x, textBG.y + 4, FlxG.width, leText, size);
 		text.setFormat(Paths.font("vcr.ttf"), size, FlxColor.WHITE, RIGHT);
 		text.scrollFactor.set();
-		add(text);
-
-		timeBar.cameras = [camINTERFACE];
-		timeBarBG.cameras = [camINTERFACE];
-		timeTxt.cameras = [camINTERFACE];
+		//add(text);
+		
+		//timeBar.cameras = [camINTERFACE];
+		//timeBarBG.cameras = [camINTERFACE];
+		//timeTxt.cameras = [camINTERFACE];
         scoreText.cameras = [camINTERFACE];
 		scoreBG.cameras = [camINTERFACE];
-		diffText.cameras = [camINTERFACE];
-		textBG.cameras = [camINTERFACE];
-		text.cameras = [camINTERFACE];
+		sprDifficulty.cameras = [camINTERFACE];
+		bottomPanel.cameras = [camINTERFACE];
+		//textBG.cameras = [camINTERFACE];
+		//text.cameras = [camINTERFACE];
 
                 #if android
                 addVirtualPad(FULL, A_B_C_X_Y_Z);
@@ -389,7 +427,6 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		}
 
 		scoreText.text = 'PERSONAL BEST: ' + lerpScore + ' (' + ratingSplit.join('.') + '%)';
-		positionHighscore();
 
 		var upP = controls.UI_UP_P;
 		var downP = controls.UI_DOWN_P;
@@ -514,34 +551,6 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 			FlxFlicker.flicker(item, 1.05, 0.06, false, false);
 			FlxFlicker.flicker(iconOpponentArray[curSelected], 1.05, 0.06, false, false);
 			}
-			else if (item.targetY == -1)
-			{
-			    FlxTween.tween(item, {y: -900}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == -2)
-			{
-			    FlxTween.tween(item, {y: -900}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == -3)
-			{
-			    FlxTween.tween(item, {y: -900}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == 0)
-			{
-			    FlxTween.tween(item, {x: 400, y: 500}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == 1)
-			{
-		    FlxTween.tween(item, {y: 900}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == 2)
-			{
-		    FlxTween.tween(item, {y: 900}, 0.7, {ease: FlxEase.backIn});
-			}
-			else if (item.targetY == 3)
-			{
-		    FlxTween.tween(item, {y: 900}, 0.7, {ease: FlxEase.backIn});
-			}
 		}
 		    FlxTween.tween(camINTERFACE, {alpha: 0}, 0.3, {ease: FlxEase.linear});
 
@@ -597,7 +606,8 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		vocals = null;
 	}
 
-	function changeDiff(change:Int = 0)
+	var tweenDifficulty:FlxTween;
+	function changeDiff(change:Int = 0):Void
 	{
 		curDifficulty += change;
 
@@ -606,16 +616,27 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		if (curDifficulty >= CoolUtil.difficulties.length)
 			curDifficulty = 0;
 
-		lastDifficultyName = CoolUtil.difficulties[curDifficulty];
+		WeekData.setDirectoryFromWeek(loadedWeeks[curWeek]);
 
-		#if !switch
-		intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
-		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
-		#end
+		var diff:String = CoolUtil.difficulties[curDifficulty];
+		var newImage:FlxGraphic = Paths.image('menudifficulties/' + Paths.formatToSongPath(diff));
+		//trace(Paths.currentModDirectory + ', menudifficulties/' + Paths.formatToSongPath(diff));
 
-		PlayState.storyDifficulty = curDifficulty;
-		diffText.text = CoolUtil.difficultyString() + ' MODE';
-		positionHighscore();
+		if(sprDifficulty.graphic != newImage)
+		{
+			sprDifficulty.loadGraphic(newImage);
+			sprDifficulty.x = leftArrow.x + 60;
+			sprDifficulty.x += (308 - sprDifficulty.width) / 3;
+			sprDifficulty.alpha = 0;
+			sprDifficulty.y = leftArrow.y - 15;
+
+			if(tweenDifficulty != null) tweenDifficulty.cancel();
+			tweenDifficulty = FlxTween.tween(sprDifficulty, {y: leftArrow.y + 15, alpha: 1}, 0.07, {onComplete: function(twn:FlxTween)
+			{
+				tweenDifficulty = null;
+			}});
+		}
+		lastDifficultyName = diff;
 	}
 
 	function changeSelection(change:Int = 0, playSound:Bool = true)
@@ -715,15 +736,6 @@ timeTxt = new FlxText(20, 19, 1280, "", 32);
 		{
 			curDifficulty = newPos;
 		}
-	}
-
-	private function positionHighscore() {
-		scoreText.x = FlxG.width - scoreText.width - 6;
-
-		scoreBG.scale.x = FlxG.width - scoreText.x + 6;
-		scoreBG.x = FlxG.width - (scoreBG.scale.x / 2);
-		diffText.x = Std.int(scoreBG.x + (scoreBG.width / 2));
-		diffText.x -= diffText.width / 2;
 	}
 }
 
